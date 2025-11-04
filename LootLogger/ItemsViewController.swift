@@ -14,13 +14,33 @@ class ItemsViewController: UITableViewController{
         // Create a new item and add it to the store
         let newItem = itemStore.createItem()
         
+        let section: Int
+        if newItem.valueInDollars > 50 {
+            section = 0
+        } else {
+            section = 1
+        }
+        
+        let sectionItems = section == 0 ?
+        itemStore.allItems.filter { $0.valueInDollars > 50 } :
+        itemStore.allItems.filter { $0.valueInDollars <= 50 }
+        
+        if let row = sectionItems.firstIndex(of: newItem) {
+            let indexPath = IndexPath(row: row, section: section)
+            tableView.insertRows(at: [indexPath], with: .automatic)
+        } else {
+            tableView.reloadData()
+        }
+        
         // Figure out where that item is in the array
+        /*
         if let index = itemStore.allItems.firstIndex(of: newItem) {
             let indexPath = IndexPath(row: index, section: 0)
             
             // Insert this new row into the table
             tableView.insertRows(at: [indexPath], with: .automatic)
         }
+         */
     }
     @IBAction func toggleEditingMode(_ sender: UIButton){
         // If you are currently in editing mode...
@@ -39,10 +59,19 @@ class ItemsViewController: UITableViewController{
         }
     }
     
+    override func numberOfSections(in tableView: UITableView) -> Int {
+        return 2
+    }
+    
     // Set number of rows in Cell
     override func tableView(_ tableView: UITableView,
         numberOfRowsInSection section: Int) -> Int {
-        return itemStore.allItems.count
+        
+        if section == 0 {
+            return itemStore.allItems.filter { $0.valueInDollars > 50 }.count
+        } else {
+            return itemStore.allItems.filter { $0.valueInDollars <= 50 }.count
+        }
     }
     
     override func tableView(_ tableView: UITableView,
@@ -50,16 +79,31 @@ class ItemsViewController: UITableViewController{
         
         // Get a new or recycled cell
         let cell = tableView.dequeueReusableCell(withIdentifier: "UITableViewCell", for: indexPath)
+        let expensiveItem = itemStore.allItems.filter { $0.valueInDollars > 50 }
+        let cheapItem = itemStore.allItems.filter { $0.valueInDollars <= 50 }
         
         // Set the text on the cell with the description of the item
         // that is at the nth index of items, where n = row this cell
         // will appear in on the table view
-        let item = itemStore.allItems[indexPath.row]
+        let item: Item
+        if indexPath.section == 0 {
+            item = expensiveItem[indexPath.row]
+        } else {
+            item = cheapItem[indexPath.row]
+        }
         
         cell.textLabel?.text = item.name
         cell.detailTextLabel?.text = "$\(item.valueInDollars)"
         
         return cell
+    }
+    
+    override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        if section == 0 {
+            return "Items over $50"
+        } else {
+            return "Items $50 and under"
+        }
     }
     
     
